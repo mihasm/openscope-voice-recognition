@@ -74,7 +74,7 @@ COMMANDS = [
     [r"turn left heading (\d\d\d)", r"t l \1"],
     [r"turn right heading (\d\d\d)", r"t r \1"],
     [r"turn left (\d\d) degrees", r"t l \1"],
-    [r"turn right (\d\d) degrees", r"t l \1"],
+    [r"turn right (\d\d) degrees", r"t r \1"],
     [r"fly heading (\d\d\d)", r"fh \1"],
     ["fly present heading", "fph"],
     ["cleared as filed", "caf"],
@@ -180,6 +180,7 @@ def parse_command_portion(command_part,most_sim_command):
     command_part = command_part.lower()
     command_part = parse_numbers(command_part)
     command_part = parse_phonetics(command_part)
+    command_part = command_part.replace("heading to","heading 2")
     command_part = re.sub(r"(\d+)\s+(?=\d)",r"\1",command_part)
 
     # parse left,right,center
@@ -217,8 +218,9 @@ def parse_callsign_portion(callsign_part):
     callsign_part = callsign_part.lower()
     callsign_part = re.sub(r'[^a-zA-Z0-9 ]', '', callsign_part)
     callsign_part = parse_numbers(callsign_part)
-    callsign_part = parse_phonetics(callsign_part)
+    callsign_part = callsign_part.replace(" to "," 2 ")
     callsign_part = parse_airlines(callsign_part)
+    callsign_part = parse_phonetics(callsign_part)
 
     m = re.match(r"([a-z]+ ?)+",callsign_part)
     if m:
@@ -271,7 +273,7 @@ def parse_voice(recognized_text):
     return out
 
 
-def on_recognition_success(text, paste_from_clipboard=False):
+def on_recognition_success(text, paste_from_clipboard=True):
     """Helper function that is used by the AudioRecognizer class
     to call the voice parsing function when the audio stops recording,
     and the voice recognition engine does its job.
@@ -283,6 +285,8 @@ def on_recognition_success(text, paste_from_clipboard=False):
     command = parse_voice(text)
     if paste_from_clipboard:
         pyperclip.copy(command)
+        keyboard.press_and_release('ctrl+a')
+        keyboard.press_and_release('delete')
         keyboard.press_and_release('ctrl+v')
         keyboard.press_and_release('enter')
 
