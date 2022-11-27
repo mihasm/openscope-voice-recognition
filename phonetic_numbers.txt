@@ -1,9 +1,9 @@
 1,one
-2,two
+2,two,to
 3,three
-4,four
+4,four,fover
 5,five
-6,six
+6,six,sex
 7,seven
 8,eight
 9,niner,nine,niners

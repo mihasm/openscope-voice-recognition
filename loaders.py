@@ -1,7 +1,14 @@
+"""Summary
+"""
 import json
 
 
 def load_airlines():
+    """Summary
+    
+    Returns:
+        TYPE: Description
+    """
     f = open("airlines.json","rb")
     txt = f.read().decode()
     d = json.loads(txt)
@@ -11,8 +18,12 @@ def load_airlines():
     return out
 
 
-
 def load_phonetics():
+    """Summary
+    
+    Returns:
+        TYPE: Description
+    """
     out = {}
     f = open("phonetic_icao.txt","r")
     lines = f.readlines()
@@ -27,6 +38,11 @@ def load_phonetics():
     return out
 
 def load_numbers():
+    """Summary
+    
+    Returns:
+        TYPE: Description
+    """
     out = {}
     f = open("phonetic_numbers.txt","r")
     lines = f.readlines()
