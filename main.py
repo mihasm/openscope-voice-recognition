@@ -85,11 +85,12 @@ COMMANDS = [
     ["report altitude", "sa"],
     [r"squawk (\d\d\d\d)", r"sq \1"],
     ["climb via sid", "cvs"],
-    ["cleared for takeoff", "cro"],
+    ["cleared for takeoff", "cto"],
     [r"taxi to runway (\d\d(L|R|C)?)", r"taxi \1"],
     [r"expect runway (\d\d(L|R|C)?)", r"e \1"],
     [r"descend via star", r"dvs"],
     [r"clear for ILS approach runway (\d\d(L|R|C)?)", r"i \1"],
+    [r"expect runway (\d\d(L|R|C)?)", r"e \1"],
 ]
 
 def prepare_commands_list():
