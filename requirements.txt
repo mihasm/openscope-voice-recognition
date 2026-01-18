@@ -3,3 +3,4 @@ pyperclip
 speechrecognition
 jellyfish
 word2number
+pynput

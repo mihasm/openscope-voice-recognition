@@ -860,5 +860,6 @@
 {"name":"Qatar Executive","icao":"QQE","callsign":"QREX","country":"Qatar"},
 {"name":"SF Airlines","icao":"CSS","callsign":"SHUN FENG","country":"China"},
 {"name":"Regent Airways","icao":"RGE","callsign":"REGENT","country":"Bangladesh"},
-{"name":"AsiaCargo Express","icao":"CXM","callsign":"ASIA CARGO","country":"Malaysia"}
+    {"name":"AsiaCargo Express","icao":"CXM","callsign":"ASIA CARGO","country":"Malaysia"},
+    {"name":"Federal Express","icao":"FDX","callsign":"FEDEX","country":"United States"}
 ]

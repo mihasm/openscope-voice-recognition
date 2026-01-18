@@ -1,222 +1,116 @@
-"""Summary
-
-Attributes:
-    AudioData (TYPE): Description
-    AudioSource (TYPE): Description
-    BUTTON (str): Description
-"""
-import keyboard  # using module keyboard
-import io
-import os
-import sys
-import subprocess
-import wave
-import aifc
 import math
 import audioop
 import collections
-import json
-import base64
-import threading
-import platform
-import stat
-import hashlib
-import hmac
-import time
-import uuid
-import re
-
-from urllib.parse import urlencode
-from urllib.request import Request, urlopen
-from urllib.error import URLError, HTTPError
-
 import speech_recognition as sr
+from pynput import keyboard
+
 AudioSource = sr.AudioSource
 AudioData = sr.AudioData
 
-BUTTON = "shift"
+# Include both left and right Shift keys
+BUTTONS = {keyboard.Key.shift, keyboard.Key.shift_l, keyboard.Key.shift_r}
+key_pressed = False  # Global variable to track if the button is pressed
 
+# Event handler for key press
+def on_press(key):
+    global key_pressed
+    if key in BUTTONS:
+        key_pressed = True
 
-def listen(self, source: sr.AudioSource, timeout=None, phrase_time_limit=None):
-    """Records a single phrase from 'source' into an 'AudioData' instance, which it returns.
-    
-    Overloads listen function from sr.Recognizer(), to implement custom button logic.
-    
-    This is done by:
-        1. waiting until the audio has an energy above 'recognizer_instance.energy_threshold'
-        (the user has started speaking),
-        2. recording until it encounters 'recognizer_instance.pause_threshold' seconds of
-        non-speaking or there is no more audio input.
-    
-        This operation will always complete within 'timeout + phrase_timeout' seconds
-        if both are numbers, either by returning the audio data, or by raising a
-        'speech_recognition.WaitTimeoutError' exception.
-    
-    
-    Args:
-        source (sr.AudioSource): Description
-        timeout (None, optional): Maximum number of seconds that this will wait
-            for a phrase to start before giving up 
-            and throwing an 'speech_recognition.WaitTimeoutError' exception.
-            If 'timeout' is 'None', there will be no wait timeout.
-        phrase_time_limit (None, optional): Maximum number of seconds that this will allow a phrase to continue
-            before stopping and returning the part of the phrase processed before
-            the time limit was reached. The resulting audio will be the phrase
-            cut off at the time limit. If 'phrase_timeout' is 'None', there will
-            be no phrase time limit.
-    
-    Returns:
-        sr.AudioData: Description
-    
-    Raises:
-        WaitTimeoutError: Description
-    
-    Deleted Parameters:
-        snowboy_configuration (None, optional): Description
-    """
+# Event handler for key release
+def on_release(key):
+    global key_pressed
+    if key in BUTTONS:
+        key_pressed = False
 
-    assert isinstance(source, AudioSource), "Source must be an audio source"
-    assert source.stream is not None, "Audio source must be entered before listening, see documentation for 'AudioSource'; are you using 'source' outside of a 'with' statement?"
-    assert self.pause_threshold >= self.non_speaking_duration >= 0
-
-    seconds_per_buffer = float(source.CHUNK) / source.SAMPLE_RATE
-    pause_buffer_count = int(
-        math.ceil(self.pause_threshold / seconds_per_buffer))
-    phrase_buffer_count = int(
-        math.ceil(self.phrase_threshold / seconds_per_buffer))
-    non_speaking_buffer_count = int(
-        math.ceil(self.non_speaking_duration / seconds_per_buffer))
-
-    elapsed_time = 0
-    buffer = b""
-    while True:
-        frames = collections.deque()
-        while True:
-            elapsed_time += seconds_per_buffer
-
-            if timeout and elapsed_time > timeout:
-                raise WaitTimeoutError(
-                    "listening timed out while waiting for phrase to start")
-
-            buffer = source.stream.read(source.CHUNK)
-
-            if len(buffer) == 0:
-                # reached end of the stream
-                break
-            frames.append(buffer)
-
-            # ensure we only keep the needed amount of non-speaking buffers
-            if len(frames) > non_speaking_buffer_count:
-                frames.popleft()
-
-            # detect whether speaking has started on audio input
-            # energy of the audio signal
-            energy = audioop.rms(buffer, source.SAMPLE_WIDTH)
-            if energy > self.energy_threshold:
-                break
-
-            # dynamically adjust the energy threshold using asymmetric weighted average
-            if self.dynamic_energy_threshold:
-                # account for different chunk sizes and rates
-                damping = self.dynamic_energy_adjustment_damping ** seconds_per_buffer
-                target_energy = energy * self.dynamic_energy_ratio
-                self.energy_threshold = self.energy_threshold * \
-                    damping + target_energy * (1 - damping)
-
-        # read audio input until the phrase ends
-        pause_count, phrase_count = 0, 0
-        phrase_start_time = elapsed_time
-        while True:
-            # handle phrase being too long by cutting off the audio
-            elapsed_time += seconds_per_buffer
-            if phrase_time_limit and elapsed_time - phrase_start_time > phrase_time_limit:
-                break
-
-            buffer = source.stream.read(source.CHUNK)
-            if len(buffer) == 0:
-                break  # reached end of the stream
-            if not keyboard.is_pressed(BUTTON):  # if key is released
-                # print('Break!')
-                break  # finishing the loop
-            frames.append(buffer)
-            phrase_count += 1
-
-            # check if speaking has stopped for longer than the pause threshold on the audio input
-            # unit energy of the audio signal within the buffer
-            energy = audioop.rms(buffer, source.SAMPLE_WIDTH)
-            if energy > self.energy_threshold:
-                pause_count = 0
-            else:
-                pause_count += 1
-            if pause_count > pause_buffer_count:  # end of the phrase
-                break
-
-        # check how long the detected phrase is, and retry listening if the phrase is too short
-        phrase_count -= pause_count  # exclude the buffers for the pause before the phrase
-        if not keyboard.is_pressed(BUTTON):  # if key is released
-            # print('Break!')
-            break  # finishing the loop
-        if phrase_count >= phrase_buffer_count or len(buffer) == 0:
-            break  # phrase is long enough or we've reached the end of the stream, so stop listening
-
-    # obtain frame data
-    for i in range(pause_count - non_speaking_buffer_count):
-        frames.pop()  # remove extra non-speaking frames at the end
-    frame_data = b"".join(frames)
-
-    return AudioData(frame_data, source.SAMPLE_RATE, source.SAMPLE_WIDTH)
+# Start the keyboard listener in a separate thread
+listener = keyboard.Listener(on_press=on_press, on_release=on_release)
+listener.start()
 
 class AudioRecognizer:
+    """Handles the process of recognizing audio with button control."""
+    
+    def __init__(self, do_something_with_text):
+        """Initialize the audio recognizer.
 
-    """Summary
-    
-    Attributes:
-        do_something_with_text (TYPE): Description
-    """
-    
-    def __init__(self,do_something_with_text):
-        """Summary
-        
         Args:
-            do_something_with_text (TYPE): Description
+            do_something_with_text (callable): Function to process recognized text.
         """
         self.do_something_with_text = do_something_with_text
+        self.recognizer = sr.Recognizer()
+        self.microphone = sr.Microphone()
+
+        # Adjust for ambient noise at startup
+        with self.microphone as source:
+            print("Adjusting for ambient noise, please wait...")
+            self.recognizer.adjust_for_ambient_noise(source)
+        print("Ready. Press and hold the Shift key to speak.")
 
     def start(self):
-        """Summary
+        """Start the recognition loop."""
+        while True:
+            if key_pressed:
+                print("Key pressed, starting recognition...")
+                audio = self.listen_until_key_release()
+                if audio is not None:
+                    try:
+                        text = self.recognizer.recognize_google(audio)
+                        print(f"Recognized: {text}")
+                        self.do_something_with_text(text)
+                    except sr.UnknownValueError:
+                        print("Could not understand the audio")
+                    except sr.RequestError as e:
+                        print(f"Could not request results; {e}")
+                else:
+                    print("No audio captured.")
+                print("Waiting for keypress...")
+
+    def listen_until_key_release(self):
+        """Listen to the microphone until the key is released.
+
+        Returns:
+            sr.AudioData: The recorded audio data.
         """
-        r = sr.Recognizer()
-        r.listen = listen
+        with self.microphone as source:
+            # Ensure the audio source is properly initialized
+            self.recognizer.energy_threshold = 300  # You can adjust this value
+            frames = []
+            seconds_per_buffer = float(source.CHUNK) / source.SAMPLE_RATE
 
-        def set_pressed():
-            """Summary
-            """
-            audio = r.listen(r,source)
-            # recognize speech using Google Speech Recognition
-            try:
-                # for testing purposes, we're just using the default API key
-                # to use another API key, use `r.recognize_google(audio, key="GOOGLE_SPEECH_RECOGNITION_API_KEY")`
-                # instead of `r.recognize_google(audio)`
-                text = r.recognize_google(audio)
-                print(">>" + text)
-                self.do_something_with_text(text)
-                
+            # Adjust recognizer settings if necessary
+            pause_buffer_count = int(math.ceil(self.recognizer.pause_threshold / seconds_per_buffer))
+            non_speaking_buffer_count = int(math.ceil(self.recognizer.non_speaking_duration / seconds_per_buffer))
+            pause_count = 0
 
-            except sr.UnknownValueError:
-                print("Google Speech Recognition could not understand audio")
-            except sr.RequestError as e:
-                print("Could not request results from Google Speech Recognition service; {0}".format(e))
+            while key_pressed:
+                buffer = source.stream.read(source.CHUNK)
+                if len(buffer) == 0:
+                    break  # End of stream
+                frames.append(buffer)
 
-            print("Waiting for keypress...")
+                # Energy of the audio signal
+                energy = audioop.rms(buffer, source.SAMPLE_WIDTH)
+                if energy > self.recognizer.energy_threshold:
+                    pause_count = 0
+                else:
+                    pause_count += 1
+                if pause_count > pause_buffer_count:
+                    # Detected a pause longer than the pause threshold
+                    # break
+                    pass
 
-        with sr.Microphone() as source:
-            print("Adjusting for ambient noise, be quiet!")
-            r.adjust_for_ambient_noise(source)  # listen for 1 second to calibrate the energy threshold for ambient noise levels
+            if not frames:
+                return None  # No audio was captured
 
-            keyboard.add_hotkey(BUTTON,lambda: set_pressed())
-            print("Waiting for keypress...")
-            keyboard.wait()
+            # Remove extra non-speaking frames at the end
+            for _ in range(pause_count - non_speaking_buffer_count):
+                if frames:
+                    frames.pop()
+
+            frame_data = b''.join(frames)
+            return sr.AudioData(frame_data, source.SAMPLE_RATE, source.SAMPLE_WIDTH)
 
 if __name__ == "__main__":
-    a = AudioRecognizer(lambda x: print(x))
-    a.start()
+    # Replace the lambda function with any function you want to handle the recognized text
+    recognizer = AudioRecognizer(lambda x: print(f"Processed Text: {x}"))
+    recognizer.start()

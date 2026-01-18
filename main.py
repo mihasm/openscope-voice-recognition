@@ -12,13 +12,14 @@ Attributes:
 Deleted Attributes:
     expected_words_callsign (TYPE): Description
 """
-import keyboard  # using module keyboard
 from difflib import get_close_matches
 import pyperclip
+from pynput.keyboard import Key, Controller
 from listen_method import AudioRecognizer
 import json
 import speech_recognition as sr
 import re
+import time
 from loaders import load_airlines, load_phonetics, load_numbers
 from difflib import SequenceMatcher
 from word2number import w2n
@@ -26,6 +27,8 @@ from word2number import w2n
 AIRLINES = load_airlines()
 PHON = load_phonetics()
 NUMS = load_numbers()
+
+keyboard = Controller()
 
 def parse_phonetics(text):
     """Summary
@@ -73,13 +76,13 @@ def parse_numbers(text):
 COMMANDS = [
     [r"turn left heading (\d\d\d)", r"t l \1"],
     [r"turn right heading (\d\d\d)", r"t r \1"],
-    [r"turn left (\d\d) degrees", r"t l \1"],
-    [r"turn right (\d\d) degrees", r"t r \1"],
-    [r"fly heading (\d\d\d)", r"fh \1"],
+#    [r"turn left (\d\d) degrees", r"t l \1"],
+#    [r"turn right (\d\d) degrees", r"t r \1"],
+    [r"fly heading (\d\d\d)", r"h \1"],
     ["fly present heading", "fph"],
     ["cleared as filed", "caf"],
-    [r"climb to flight level (\d\d\d?)", r"c \1"],
-    [r"descend to flight level (\d\d\d?)", r"d \1"],
+    [r"climb and maintain flight level (\d\d\d?)", r"c \1"],
+    [r"descend and maintain flight level (\d\d\d?)", r"d \1"],
     ["report speed", "si"],
     ["report heading", "sh"],
     ["report altitude", "sa"],
@@ -89,8 +92,12 @@ COMMANDS = [
     [r"taxi to runway (\d\d(L|R|C)?)", r"taxi \1"],
     [r"expect runway (\d\d(L|R|C)?)", r"e \1"],
     [r"descend via star", r"dvs"],
+    [r"descend via star, descend and maintain flight level (\d+)", r"dvs \1"],
     [r"clear for ILS approach runway (\d\d(L|R|C)?)", r"i \1"],
     [r"expect runway (\d\d(L|R|C)?)", r"e \1"],
+    [r"reduce speed to (\d\d\d)",r"sp \1"],
+    [r"increase speed to (\d\d\d)",r"sp \1"],
+    [r"set speed to (\d\d\d)",r"sp \1"],
 ]
 
 def prepare_commands_list():
@@ -189,6 +196,7 @@ def parse_command_portion(command_part,most_sim_command):
     command_part = re.sub(r"(\d+) left",r"\1L",command_part)
     command_part = re.sub(r"(\d+) center",r"\1C",command_part)
     command_part = re.sub(r"(\d+) centre",r"\1C",command_part)
+    command_part = re.sub(r"(\d+)\-(\d+)",r"\1\2",command_part)
 
     # Get numbers from command and callsign in order
     numbers_command = re.findall(r"\d+[RLC]?", command_part)
@@ -286,11 +294,12 @@ def on_recognition_success(text, paste_from_clipboard=True):
     command = parse_voice(text)
     if paste_from_clipboard:
         pyperclip.copy(command)
-        keyboard.press_and_release('ctrl+a')
-        keyboard.press_and_release('delete')
-        keyboard.press_and_release('ctrl+v')
-        keyboard.press_and_release('enter')
-
+        with keyboard.pressed(Key.cmd):
+            keyboard.press('v')
+            keyboard.release('v')
+        time.sleep(0.1)
+        keyboard.press(Key.enter)
+        keyboard.release(Key.enter)
 
 a = AudioRecognizer(on_recognition_success)
 a.start()
