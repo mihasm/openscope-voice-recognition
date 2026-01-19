@@ -1,13 +1,16 @@
-"""Summary
+"""Data loading utilities for OpenScope Voice Recognition.
+
+This module provides functions to load airline, phonetic, and number mapping data
+from external files into dictionaries for use by the voice recognition system.
 """
 import json
 
 
 def load_airlines():
-    """Summary
-    
+    """Load airline callsign to ICAO code mappings from airlines.json.
+
     Returns:
-        TYPE: Description
+        dict: Dictionary mapping airline callsigns to ICAO codes
     """
     f = open("airlines.json","rb")
     txt = f.read().decode()
@@ -19,10 +22,10 @@ def load_airlines():
 
 
 def load_phonetics():
-    """Summary
-    
+    """Load NATO phonetic alphabet mappings from phonetic_icao.txt.
+
     Returns:
-        TYPE: Description
+        dict: Dictionary mapping phonetic words to letters
     """
     out = {}
     f = open("phonetic_icao.txt","r")
@@ -38,10 +41,10 @@ def load_phonetics():
     return out
 
 def load_numbers():
-    """Summary
-    
+    """Load number pronunciation mappings from phonetic_numbers.txt.
+
     Returns:
-        TYPE: Description
+        dict: Dictionary mapping number words to digits
     """
     out = {}
     f = open("phonetic_numbers.txt","r")

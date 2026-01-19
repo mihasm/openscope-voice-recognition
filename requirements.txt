@@ -1,6 +1,5 @@
-keyboard
-pyperclip
-speechrecognition
-jellyfish
-word2number
-pynput
+SpeechRecognition>=3.8.1
+pyperclip>=1.8.2
+pynput>=1.7.6
+word2number>=1.1
+pyaudio

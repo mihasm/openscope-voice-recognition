@@ -1,2 +1,0 @@
-{"event_type": "down", "scan_code": 59, "name": "ctrl", "time": 1729261547.850786, "is_keypad": 0}
-{"event_type": "down", "scan_code": 8, "time": 1729261550.074199, "is_keypad": 0}

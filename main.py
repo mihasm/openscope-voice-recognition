@@ -1,16 +1,13 @@
-"""Main application, which uses an Tx button to record the user's voice,
-and generate the appropriate commands as per OpenScope specification.
+"""OpenScope Voice Recognition System
 
-Attributes:
-    a (TYPE): Description
-    AIRLINES (TYPE): Description
-    COMMANDS (TYPE): Description
-    i (int): Description
-    NUMS (TYPE): Description
-    PHON (TYPE): Description
+Main application that provides voice control for OpenScope air traffic control simulation.
+Converts spoken ATC commands into OpenScope command format and automatically inputs them.
 
-Deleted Attributes:
-    expected_words_callsign (TYPE): Description
+The system uses push-to-talk functionality (Shift key) and integrates with Google Speech
+Recognition API to process natural language ATC commands.
+
+Author: OpenScope Voice Recognition Project
+License: MIT
 """
 from difflib import get_close_matches
 import pyperclip
@@ -31,13 +28,13 @@ NUMS = load_numbers()
 keyboard = Controller()
 
 def parse_phonetics(text):
-    """Summary
-    
+    """Convert phonetic alphabet words to their corresponding letters.
+
     Args:
-        text (TYPE): Description
-    
+        text (str): Input text containing phonetic words
+
     Returns:
-        TYPE: Description
+        str: Text with phonetic words replaced by letters (e.g., "alpha" -> "A")
     """
     for k in PHON.keys():
         if k in text:
@@ -45,13 +42,13 @@ def parse_phonetics(text):
     return text
 
 def parse_airlines(text):
-    """Summary
-    
+    """Convert airline names to their ICAO codes.
+
     Args:
-        text (TYPE): Description
-    
+        text (str): Input text containing airline names
+
     Returns:
-        TYPE: Description
+        str: Text with airline names replaced by ICAO codes
     """
     for k in AIRLINES.keys():
         if k in text:
@@ -59,13 +56,13 @@ def parse_airlines(text):
     return text
 
 def parse_numbers(text):
-    """Summary
-    
+    """Convert written numbers to digits.
+
     Args:
-        text (TYPE): Description
-    
+        text (str): Input text containing written numbers
+
     Returns:
-        TYPE: Description
+        str: Text with written numbers replaced by digits
     """
     for k in NUMS.keys():
         if k in text:
